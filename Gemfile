@@ -42,6 +42,11 @@ group :development do
   gem 'spring-watcher-listen', '~> 2.0.0'
 end
 
+# Run against the latest stable release
+group :development, :test do
+  gem 'rspec-rails'
+end
+
 group :test do
   # Adds support for Capybara system testing and selenium driver
   gem 'capybara', '>= 2.15'
