@@ -1,7 +1,7 @@
 require "spec_helper"
-require "./app/lib/git"
+require "./app/lib/git_base"
 
-describe Git do
+describe GitBase do
   GIT_ROOT = "spec/git_root"
   GIT_BIN_DIR = "bin"
 
@@ -17,7 +17,7 @@ describe Git do
   end
 
   it "writes to git" do
-    git = Git.new(GIT_ROOT, GIT_BIN_DIR)
+    git = GitBase.new(GIT_ROOT, GIT_BIN_DIR)
 
     attributes = {color: "red", size: 1}
     git.update("widget", "abcd", attributes)
@@ -26,7 +26,7 @@ describe Git do
   end
 
   it "returns history objects after two writes" do
-    git = Git.new(GIT_ROOT, GIT_BIN_DIR)
+    git = GitBase.new(GIT_ROOT, GIT_BIN_DIR)
 
     attributes = {color: "red", size: 1}
     git.update("widget", "abcd", attributes)

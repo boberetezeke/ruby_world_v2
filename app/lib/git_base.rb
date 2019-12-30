@@ -1,7 +1,7 @@
 require "yaml"
 require "json"
 
-class Git
+class GitBase
   class History
     def initialize(json)
       @json = json
