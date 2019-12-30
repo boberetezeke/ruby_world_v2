@@ -1,0 +1,25 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Short description:</strong>
+  <%= @todo.short_description %>
+</p>
+
+<p>
+  <strong>Order:</strong>
+  <%= @todo.order %>
+</p>
+
+<p>
+  <strong>State:</strong>
+  <%= @todo.state %>
+</p>
+
+<h2>History</h2>
+<% @todo.history_json.each do |history| %>
+  <p><%= history['commit'] %></p>
+  <p><%= history['date'] %></p>
+<% end %>
+
+<%= link_to 'Edit', edit_todo_path(@todo) %> |
+<%= link_to 'Back', todos_path %>
