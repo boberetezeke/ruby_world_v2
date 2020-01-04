@@ -16,9 +16,9 @@
 </p>
 
 <h2>History</h2>
-<% @todo.history_json.each do |history| %>
-  <p><%= history['commit'] %></p>
-  <p><%= history['date'] %></p>
+<% @todo.history.entries.each do |history_entry| %>
+  <p><%= history_entry.sha %></p>
+  <p><%= history_entry.time %></p>
 <% end %>
 
 <%= link_to 'Edit', edit_todo_path(@todo) %> |

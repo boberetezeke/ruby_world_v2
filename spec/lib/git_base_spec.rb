@@ -1,6 +1,13 @@
 require "spec_helper"
 require "./app/lib/git_base"
 
+class Widget
+  attr_reader :attributes
+  def initialize(attributes)
+    @attributes = attributes
+  end
+end
+
 describe GitBase do
   GIT_ROOT = "spec/git_root"
   GIT_BIN_DIR = "bin"
@@ -20,21 +27,39 @@ describe GitBase do
     git = GitBase.new(GIT_ROOT, GIT_BIN_DIR)
 
     attributes = {color: "red", size: 1}
-    git.update("widget", "abcd", attributes)
+    git.update(git.object_id(Widget, "widget", "abcd"), attributes)
 
     expect(YAML.load(File.read("#{GIT_ROOT}/widget/abcd.yml"))).to eq(attributes)
   end
 
   it "returns history objects after two writes" do
     git = GitBase.new(GIT_ROOT, GIT_BIN_DIR)
+    git_oid = git.object_id(Widget, "widget", "abcd")
 
     attributes = {color: "red", size: 1}
-    git.update("widget", "abcd", attributes)
+    git.update(git_oid, attributes)
 
     attributes = {color: "blue", size: 2}
-    git.update("widget", "abcd", attributes)
+    git.update(git_oid, attributes)
 
-    history = git.history("widget", "abcd")
-    expect(history.size).to eq(2)
+    history = git.history(git_oid)
+    expect(history.entries.size).to eq(2)
+    expect(history.entries.first.class).to eq(GitBase::HistoryEntry)
+    expect(history.entries.first.message).to eq("update")
+  end
+
+  it "returns a particular version of an object" do
+    git = GitBase.new(GIT_ROOT, GIT_BIN_DIR)
+    git_oid = git.object_id(Widget, "widget", "abcd")
+
+    attributes = {color: "red", size: 1}
+    git.update(git_oid, attributes)
+    attributes = {color: "blue", size: 2}
+    git.update(git_oid, attributes)
+
+    history = git.history(git_oid)
+
+    expect(history.entries[0].retrieve.attributes).to eq({color: "blue", size: 2})
+    expect(history.entries[1].retrieve.attributes).to eq({color: "red", size: 1})
   end
 end

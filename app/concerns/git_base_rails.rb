@@ -6,24 +6,28 @@ module GitBaseRails
     after_save :write_to_git
   end
 
-  def history_json
-    git_base.history(object_class_name(self), self.id)
+  def history
+    git_base.history(git_object_id)
   end
 
   private
 
   def write_to_git
     if self.class.git_baseable_options
-      git_base.update(object_class_name(self), self.id, object_attributes(self))
+      git_base.update(git_object_id, object_attributes(self))
     end
   end
 
   def git_base
-    GitBase.new(git_db_directory, "#{Rails.root}/bin")
+    @git_base ||= GitBase.new(git_db_directory, "#{Rails.root}/bin")
   end
 
   def git_db_directory
     Rails.application.secrets[:git_db_directory]
+  end
+
+  def git_object_id
+    git_base.object_id(self.class, object_class_name(self), self.id)
   end
 
   def object_class_name(object)
@@ -33,6 +37,7 @@ module GitBaseRails
   def object_attributes(object)
     object.attributes
   end
+
   class_methods do
     def git_baseable
       @git_baseable_options = {}
@@ -41,6 +46,5 @@ module GitBaseRails
     def git_baseable_options
       @git_baseable_options
     end
-
   end
 end
