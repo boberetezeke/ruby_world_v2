@@ -45,7 +45,10 @@ describe GitBase do
     history = git.history(git_oid)
     expect(history.entries.size).to eq(2)
     expect(history.entries.first.class).to eq(GitBase::HistoryEntry)
-    expect(history.entries.first.message).to eq("update")
+    changes_summary_expected = GitBase::ChangesSummary.new
+    changes_summary_expected.add(GitBase::Change.new(:color, "red", "blue"))
+    changes_summary_expected.add(GitBase::Change.new(:size, 1, 2))
+    expect(YAML.load(history.entries.first.changes_summary)).to eq(changes_summary_expected)
   end
 
   it "returns a particular version of an object" do

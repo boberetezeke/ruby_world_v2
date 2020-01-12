@@ -11,16 +11,58 @@ class GitBase
     end
   end
 
+  class Change
+    OLD_NEW = 'old_new'
+
+    attr_reader :name, :old_value, :new_value, :change_type, :complete
+    def initialize(name, old_value, new_value, change_type: OLD_NEW, complete: true)
+      @name = name
+      @old_value = old_value
+      @new_value = new_value
+      @change_type = change_type
+      @complete = complete
+    end
+
+    def ==(other)
+      @name == other.name &&
+      @old_value == other.old_value &&
+      @new_value == other.new_value &&
+      @change_type == other.change_type &&
+      @complete == other.complete
+    end
+  end
+
+  class ChangesSummary
+    attr_reader :changes
+
+    def initialize
+      @changes = {}
+    end
+
+    def add(change)
+      @changes[change.name] = change
+    end
+
+    def ==(other)
+      return false unless other.is_a?(ChangesSummary)
+      comps = @changes.map do |k, change|
+        other.changes[k] == change
+      end
+      comps.select{|c| c}.size == @changes.keys.size
+    end
+  end
+
   class HistoryEntry
-    attr_reader :sha, :author, :message, :file_entry, :time
+    attr_reader :sha, :author, :message, :file_entry, :time, :changes_summary
 
     def initialize(git_base, file_entry, json)
       @git_base = git_base
       @file_entry = file_entry
-      @sha = json['commit']
-      @author = json['author']
-      @message = json['message']
-      @time = json['date']
+      @sha = json[:commit]
+      @author = json[:author]
+      @message = json[:message]
+      @time = json[:date]
+      @changes_summary = json[:changes_summary]
     end
 
     def retrieve
@@ -76,8 +118,8 @@ class GitBase
 
     file_entry = FileEntry.new(object_id)
     Dir.chdir(db_path) do
-      output = `bash #{@bin_directory}/log-history.sh #{file_entry.relative_filename}`
-      json = JSON.parse(output)
+      output = `git log`.split(/\n/)
+      json = parse_history(output)
     end
 
     History.new(self, file_entry, json)
@@ -108,14 +150,77 @@ class GitBase
     Dir.mkdir(fe.path_for_class(db_path)) unless File.exist?(fe.path_for_class(db_path))
 
     if File.directory?(fe.path_for_class(db_path))
-      File.open(fe.full_filename(db_path), "w") {|f| f.write object_attributes.to_yaml }
-      Dir.chdir(db_path) do
-        system("git add #{fe.relative_filename}")
-        system("git commit -m \"update\"")
+      filename = fe.full_filename(db_path)
+      if File.exist?(filename)
+        current_state = YAML.load(File.read(filename))
+      else
+        current_state = {}
+      end
+      diff = difference(current_state, object_attributes)
+      File.open(filename, "w") {|f| f.write object_attributes.to_yaml }
+      commit_message_file = Tempfile.new("commit-message")
+      begin
+        commit_message_file.write diff.to_yaml
+        commit_message_file.close
+        Dir.chdir(db_path) do
+          system("git add #{fe.relative_filename}")
+          system("git commit --file #{commit_message_file.path}")
+        end
+      ensure
+        commit_message_file.unlink
       end
     else
       puts "Warning: Unable to save file because file #{fe.path_for_class(db_path)} is not a directory json file"
     end
+  end
+
+  def difference(current_state, new_state)
+    diff = ChangesSummary.new
+    new_state.each do |k,v|
+      if current_state[v] != v
+        diff.add(Change.new(k, current_state[k], v))
+      end
+    end
+
+    diff
+  end
+
+  def parse_history(output)
+    json = []
+    entry = {}
+    yaml = ""
+    message = ""
+    output.each do |line|
+      line.chomp!
+      case line
+      when /^commit (.*)$/
+        unless entry.empty?
+          entry[:message] = message
+          entry[:changes_summary] = yaml
+          json.push(entry)
+          entry = {}
+          yaml = ""
+          message = ""
+        end
+        entry[:commit] = $1
+      when /^Author: (.*)/
+        entry[:author] = $1
+      when /^Date: (.*)/
+        entry[:date] = $1
+      else
+        message << line + "\n"
+        if line.size >= 4
+          yaml << line[4..-1] + "\n"
+        end
+      end
+    end
+    entry[:message] = message
+    entry[:changes_summary] = yaml
+    json.push(entry)
+    # output = `bash #{@bin_directory}/log-history.sh #{file_entry.relative_filename}`
+    # json = JSON.parse(output)
+
+    json
   end
 
   def db_path
