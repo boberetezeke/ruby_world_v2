@@ -10,6 +10,12 @@ class TodosController < ApplicationController
   # GET /todos/1
   # GET /todos/1.json
   def show
+    if params[:sha]
+      history_entry = @todo.history.entries.select{|h| h.sha == params[:sha]}.first
+      if history_entry
+        @todo = history_entry.retrieve
+      end
+    end
   end
 
   # GET /todos/new

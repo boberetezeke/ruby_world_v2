@@ -1,0 +1,10 @@
+<h2>History</h2>
+<% object.history.entries.each do |history_entry| %>
+  <p><%= link_to(history_entry.sha, path_func.call(sha: history_entry.sha)) %></p>
+  <p><%= history_entry.time %></p>
+  <ul>
+    <% history_entry.changes_summary.changes.each do |attribute, change| %>
+      <li><%= attribute %> - OLD: <%= change.old_value %>, NEW: <%= change.new_value %></li>
+    <% end %>
+  </ul>
+<% end %>

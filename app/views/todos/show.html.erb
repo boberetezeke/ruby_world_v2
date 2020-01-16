@@ -1,31 +1,14 @@
 <p id="notice"><%= notice %></p>
 
-<p>
-  <strong>Short description:</strong>
-  <%= @todo.short_description %>
-</p>
+<%= render partial: 'todos/show', locals: { todo: @todo } %>
 
-<p>
-  <strong>Order:</strong>
-  <%= @todo.order %>
-</p>
-
-<p>
-  <strong>State:</strong>
-  <%= @todo.state %>
-</p>
-
-<%= link_to 'Edit', edit_todo_path(@todo) %> |
-<%= link_to 'Back', todos_path %>
-
-<h2>History</h2>
-<% @todo.history.entries.each do |history_entry| %>
-  <p><%= history_entry.sha %></p>
-  <p><%= history_entry.time %></p>
-  <ul>
-    <% history_entry.changes_summary.changes.each do |attribute, change| %>
-      <li><%= attribute %> - OLD: <%= change.old_value %>, NEW: <%= change.new_value %></li>
-    <% end %>
-  </ul>
+<% if params[:sha] %>
+  <%= link_to 'Back', todo_path(@todo) %>
+<% else %>
+  <%= link_to 'Edit', edit_todo_path(@todo) %> |
+  <%= link_to 'Back', todos_path %>
 <% end %>
 
+<% unless params[:sha] %>
+  <%= render partial: 'git_base/history', locals: { object: @todo, path_func: ->(todo_params){ todo_path(@todo, todo_params) } } %>
+<% end %>
