@@ -62,7 +62,7 @@ class GitBase
       @author = json[:author]
       @message = json[:message]
       @time = json[:date]
-      @changes_summary = json[:changes_summary]
+      @changes_summary = YAML::load(json[:changes_summary])
     end
 
     def retrieve
@@ -177,7 +177,7 @@ class GitBase
   def difference(current_state, new_state)
     diff = ChangesSummary.new
     new_state.each do |k,v|
-      if current_state[v] != v
+      if current_state[k] != v
         diff.add(Change.new(k, current_state[k], v))
       end
     end

@@ -15,11 +15,17 @@
   <%= @todo.state %>
 </p>
 
+<%= link_to 'Edit', edit_todo_path(@todo) %> |
+<%= link_to 'Back', todos_path %>
+
 <h2>History</h2>
 <% @todo.history.entries.each do |history_entry| %>
   <p><%= history_entry.sha %></p>
   <p><%= history_entry.time %></p>
+  <ul>
+    <% history_entry.changes_summary.changes.each do |attribute, change| %>
+      <li><%= attribute %> - OLD: <%= change.old_value %>, NEW: <%= change.new_value %></li>
+    <% end %>
+  </ul>
 <% end %>
 
-<%= link_to 'Edit', edit_todo_path(@todo) %> |
-<%= link_to 'Back', todos_path %>
