@@ -118,7 +118,7 @@ class GitBase
 
     file_entry = FileEntry.new(object_id)
     Dir.chdir(db_path) do
-      output = `git log`.split(/\n/)
+      output = `git log #{file_entry.relative_filename}`.split(/\n/)
       json = parse_history(output)
     end
 
