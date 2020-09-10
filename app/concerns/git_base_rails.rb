@@ -1,4 +1,5 @@
 require 'active_support/concern'
+require 'git_base'
 
 module GitBaseRails
   extend ActiveSupport::Concern
@@ -19,7 +20,7 @@ module GitBaseRails
   end
 
   def git_base
-    @git_base ||= GitBase.new(git_db_directory, "#{Rails.root}/bin")
+    @git_base ||= GitBase::Database.new(git_db_directory, "#{Rails.root}/bin")
   end
 
   def git_db_directory
