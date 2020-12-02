@@ -62,5 +62,10 @@ module GitBaseRails
       new(attributes)
     end
 
+    def create_git_for_all
+      self.all.find_each do |object|
+        object.send(:write_to_git)
+      end
+    end
   end
 end
