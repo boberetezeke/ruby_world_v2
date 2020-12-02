@@ -1,0 +1,10 @@
+class AddCsvTodos < ActiveRecord::Migration[6.0]
+  def change
+    create_table :csv_todos do |t|
+      t.integer :store_id
+      t.string  :title
+      t.integer :order
+      t.boolean :done
+    end
+  end
+end
