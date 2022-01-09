@@ -8,28 +8,31 @@ class SyncJob < ActiveJob::Base
 
     branch_name = "csv"
 
-    git_base = GitBaseRails.git_base(branch_name: branch_name)
+    git_base = GitBaseRails.git_base(branch_name: branch_name, set_class_var: false, initialize_if_doesnt_exist: false)
+
+    master_base = GitBaseRails.git_base(branch_name: 'master', set_class_var: false)
+    bare_base = GitBaseRails.git_base(branch_name: 'bare', set_class_var: false)
 
     # clone the repo
     if git_base.exists?
       clone_base = git_base
     else
-      clone_base = git_base.clone(GitBaseRails.git_db_directory(branch_name: branch_name), "bin")
+      clone_base = bare_base.clone(GitBaseRails.git_db_directory(branch_name: branch_name), "bin")
 
       # checkout branch
-      clone_base.switch_to_branch(branch_name)
+      clone_base.switch_to_branch(branch_name, create: true)
     end
 
     #
     # get remote data
     #
     clone_base.tag(Time.now.strftime("sync-%Y-%m-%d--%H-%M-%S"));
-    CSV.open("todo.csv") do |csv|
-      todo = Csv::Todo.find_by_store_id(csv[0])
+    CSV.foreach("todo.csv") do |row|
+      todo = CsvStoreTodo.find_by_store_id(row[0])
       if todo
-        todo.update(title: csv[1], order: csv[2], done: csv[3].present?)
+        todo.update(title: row[1], order: row[2], done: row[3].present?)
       else
-        Csv::Todo.create(store_id: csv[0], title: csv[1], order: csv[2], done: csv[3].present?)
+        CsvStoreTodo.create(store_id: row[0], title: row[1], order: row[2], done: row[3].present?)
       end
     end
     clone_base.history
@@ -45,12 +48,27 @@ class SyncJob < ActiveJob::Base
     clone_base.switch_to_branch("master")
 
     # merge branch
-    clone_base..merge(branch_name)
+    clone_base.merge(branch_name)
 
     # pull from origin
     clone_base.fetch("origin")
 
     # push to origin
-    clone_base.push("origin")
+    clone_base.push("origin", "master")
+
+    changes = []
+    listener = Listen.to(GitBaseRails.git_db_directory(branch_name: 'master')) do |mod, add, rem|
+      changes.push({mod: mod, add: add, rem: rem})
+    end
+    listener.start
+
+    # pull from origin
+    master_base.pull("origin", "master")
+    sleep 0.3
+    listener.stop
+
+    puts changes
+
+    # detect changes in master directory and update database
   end
 end

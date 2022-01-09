@@ -18,6 +18,11 @@ class TodosController < ApplicationController
     end
   end
 
+  def sync
+    SyncJob.perform_now
+    redirect_to todos_path
+  end
+
   # GET /todos/new
   def new
     @todo = Todo.new

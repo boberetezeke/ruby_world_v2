@@ -1,5 +1,5 @@
-module Csv
+module CsvStore
   def self.table_name_prefix
-    "csv_"
+    "csv_store_"
   end
 end

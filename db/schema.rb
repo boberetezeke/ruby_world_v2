@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_10_24_234213) do
+ActiveRecord::Schema.define(version: 2020_12_02_025013) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -22,7 +22,7 @@ ActiveRecord::Schema.define(version: 2020_10_24_234213) do
     t.string "email"
   end
 
-  create_table "csv_todos", force: :cascade do |t|
+  create_table "csv_store_todos", force: :cascade do |t|
     t.integer "store_id"
     t.string "title"
     t.integer "order"

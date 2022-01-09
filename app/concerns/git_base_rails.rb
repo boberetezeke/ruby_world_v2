@@ -11,13 +11,15 @@ module GitBaseRails
     GitBaseRails.git_base(branch_name: branch_name).history(object_guid: git_object_guid)
   end
 
-  def self.git_base(branch_name: 'master')
+  def self.git_base(branch_name: 'master', initialize_if_doesnt_exist: true, set_class_var: true)
     Dir.mkdir(git_db_base_directory) unless File.exist?(git_db_base_directory)
     directory = git_db_directory(branch_name: branch_name)
-    @git_base ||= GitBase::Database.new(directory, "#{Rails.root}/bin")
+    base = GitBase::Database.new(directory, "#{Rails.root}/bin", initialize_if_doesnt_exist: initialize_if_doesnt_exist)
+    @git_base ||=  base if set_class_var
+    base
   end
 
-  def self.git_db_base_directory(branch_name: 'master')
+  def self.git_db_base_directory
     Rails.application.secrets[:git_db_directory]
   end
 
