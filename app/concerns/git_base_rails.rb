@@ -20,7 +20,7 @@ module GitBaseRails
   end
 
   def self.git_db_base_directory
-    Rails.application.secrets[:git_db_directory]
+    Rails.application.credentials[:git_db_directory]
   end
 
   def self.git_db_directory(branch_name: 'master')

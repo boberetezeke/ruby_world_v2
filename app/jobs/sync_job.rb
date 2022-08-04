@@ -38,9 +38,9 @@ class SyncJob < ActiveJob::Base
     clone_base.history
 
     # merge master into branch
-    conflicts = clone_base.merge("master")
+    result = clone_base.merge("master")
 
-    if conflicts.present?
+    if result.conflicts?
       # fix conflicts
     end
 
@@ -70,5 +70,34 @@ class SyncJob < ActiveJob::Base
     puts changes
 
     # detect changes in master directory and update database
+    process_changes(changes.first)
+  end
+
+  def process_changes(changes)
+    process_mods(changes[:mod])
+    process_adds(changes[:add])
+    process_removals(changes[:rem])
+  end
+
+  def process_mods(mods)
+    mods.each do |mod|
+      attributes = YAML.load(File.open(mod))
+      todo = Todo.find(attributes['id'])
+      todo.update_attributes(attributes)
+    end
+  end
+
+  def process_adds(adds)
+    adds.each do |add|
+      attributes = YAML.load(File.open(add))
+      Todo.create(attributes)
+    end
+  end
+
+  def process_removals(removals)
+    removals.each do |removal|
+      attributes = YAML.load(File.open(removal))
+      Todo.destroy(attributes['id'])
+    end
   end
 end
