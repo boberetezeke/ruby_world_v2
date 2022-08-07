@@ -21,6 +21,5 @@ describe SyncJob do
 
     SyncJob.perform_now
     expect(CsvStoreTodo.count).to eq(3)
-    expect(Todo.count).to eq(3)
   end
 end

@@ -23,22 +23,19 @@ class SyncJob < ActiveJob::Base
       clone_base.switch_to_branch(branch_name, create: true)
     end
 
+    # merge master into branch
+    result = clone_base.merge("master")
+
     #
     # get remote data
     #
-    clone_base.tag(Time.now.strftime("sync-%Y-%m-%d--%H-%M-%S"));
+    clone_base.tag(Time.now.strftime("sync-start--%Y-%m-%d--%H-%M-%S"));
     CSV.foreach("todo.csv") do |row|
-      todo = CsvStoreTodo.find_by_store_id(row[0])
-      if todo
-        todo.update(title: row[1], order: row[2], done: row[3].present?)
-      else
-        CsvStoreTodo.create(store_id: row[0], title: row[1], order: row[2], done: row[3].present?)
-      end
+      csv_store_todo = CsvStoreTodo.new(
+        store_id: row[0], title: row[1], order: row[2], done: row[3].present?)
+      csv_store_todo.write_to_git
     end
     clone_base.history
-
-    # merge master into branch
-    result = clone_base.merge("master")
 
     if result.conflicts?
       # fix conflicts
@@ -82,7 +79,7 @@ class SyncJob < ActiveJob::Base
   def process_mods(mods)
     mods.each do |mod|
       attributes = YAML.load(File.open(mod))
-      todo = Todo.find(attributes['id'])
+      todo = CsvStoreTodo.find(attributes['id'])
       todo.update_attributes(attributes)
     end
   end
@@ -90,14 +87,14 @@ class SyncJob < ActiveJob::Base
   def process_adds(adds)
     adds.each do |add|
       attributes = YAML.load(File.open(add))
-      Todo.create(attributes)
+      CsvStoreTodo.create(attributes)
     end
   end
 
   def process_removals(removals)
     removals.each do |removal|
       attributes = YAML.load(File.open(removal))
-      Todo.destroy(attributes['id'])
+      CsvStoreTodo.destroy(attributes['id'])
     end
   end
 end

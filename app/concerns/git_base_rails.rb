@@ -27,20 +27,30 @@ module GitBaseRails
     File.join(git_db_base_directory, branch_name)
   end
 
-  private
+  def get_uuid
+    ActiveRecord::Base.connection.execute(
+      'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; SELECT uuid_generate_v4();'
+    ).first['uuid_generate_v4'];
+  end
 
   def write_to_git
     if (options = self.class.git_baseable_options)
-      GitBaseRails.git_base(branch_name: options[:branch_name]).update(git_object_guid, object_attributes(self))
+      attr = object_attributes(self)
+      attr['id'] = get_uuid if attr['id'].nil?
+      GitBaseRails
+        .git_base(branch_name: options[:branch_name])
+        .update(git_object_guid(id: attr['id']), attr)
     end
   end
+
+  private
 
   def git_base
     GitBaseRails.git_base
   end
 
-  def git_object_guid
-    git_base.object_guid(self.class, object_class_name(self), self.id)
+  def git_object_guid(id: nil)
+    git_base.object_guid(self.class, object_class_name(self), id || self.id)
   end
 
   def object_class_name(object)

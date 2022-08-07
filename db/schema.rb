@@ -22,7 +22,7 @@ ActiveRecord::Schema.define(version: 2020_12_02_025013) do
     t.string "email"
   end
 
-  create_table "csv_store_todos", force: :cascade do |t|
+  create_table "csv_store_todos", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.integer "store_id"
     t.string "title"
     t.integer "order"
