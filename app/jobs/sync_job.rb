@@ -3,10 +3,8 @@ require "csv"
 class SyncJob < ActiveJob::Base
   queue_as :default
 
-  def perform(*args)
-    Rails.logger.debug "#{self.class.name}: I'm performing my job with arguments: #{args.inspect}"
-
-    branch_name = "csv"
+  def perform(store)
+    branch_name = store.store_branch_name
 
     git_base = GitBaseRails.git_base(branch_name: branch_name, set_class_var: false, initialize_if_doesnt_exist: false)
 
@@ -30,11 +28,7 @@ class SyncJob < ActiveJob::Base
     # get remote data
     #
     clone_base.tag(Time.now.strftime("sync-start--%Y-%m-%d--%H-%M-%S"));
-    CSV.foreach("todo.csv") do |row|
-      csv_store_todo = CsvStoreTodo.new(
-        store_id: row[0], title: row[1], order: row[2], done: row[3].present?)
-      csv_store_todo.write_to_git
-    end
+    store.write_to_git
     clone_base.history
 
     if result.conflicts?
@@ -67,34 +61,6 @@ class SyncJob < ActiveJob::Base
     puts changes
 
     # detect changes in master directory and update database
-    process_changes(changes.first)
-  end
-
-  def process_changes(changes)
-    process_mods(changes[:mod])
-    process_adds(changes[:add])
-    process_removals(changes[:rem])
-  end
-
-  def process_mods(mods)
-    mods.each do |mod|
-      attributes = YAML.load(File.open(mod))
-      todo = CsvStoreTodo.find(attributes['id'])
-      todo.update_attributes(attributes)
-    end
-  end
-
-  def process_adds(adds)
-    adds.each do |add|
-      attributes = YAML.load(File.open(add))
-      CsvStoreTodo.create(attributes)
-    end
-  end
-
-  def process_removals(removals)
-    removals.each do |removal|
-      attributes = YAML.load(File.open(removal))
-      CsvStoreTodo.destroy(attributes['id'])
-    end
+    store.process_changes(changes.first)
   end
 end

@@ -19,7 +19,8 @@ describe SyncJob do
       run("git push")
     end
 
-    SyncJob.perform_now
+    csv_store = Store::TodoCsvStore.new
+    SyncJob.perform_now(csv_store)
     expect(CsvStoreTodo.count).to eq(3)
   end
 end
