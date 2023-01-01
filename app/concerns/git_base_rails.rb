@@ -4,7 +4,9 @@ require 'git_base'
 module GitBaseRails
   extend ActiveSupport::Concern
   included do
+    after_initialize :init_git_options
     after_save :write_to_git
+    serialize :__git_options
   end
 
   def history(branch_name: 'master')
@@ -33,8 +35,12 @@ module GitBaseRails
     ).first['uuid_generate_v4'];
   end
 
+  def init_git_options
+    self.__git_options ||= {}
+  end
+
   def write_to_git
-    if (options = self.class.git_baseable_options)
+    if (options = self.class.git_baseable_options.merge(__git_options))
       attr = object_attributes(self)
       attr['id'] = get_uuid if attr['id'].nil?
       GitBaseRails
@@ -78,6 +84,14 @@ module GitBaseRails
       self.all.find_each do |object|
         object.send(:write_to_git)
       end
+    end
+
+    def tag(tag_name, branch_name: 'master')
+      GitBaseRails.git_base(branch_name: branch_name).tag(tag_name)
+    end
+
+    def history_since(since, branch_name: 'master')
+      GitBaseRails.git_base(branch_name: branch_name).history(since: since)
     end
   end
 end

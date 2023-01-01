@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_02_025013) do
+ActiveRecord::Schema.define(version: 2022_12_30_160601) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -27,6 +27,7 @@ ActiveRecord::Schema.define(version: 2020_12_02_025013) do
     t.string "title"
     t.integer "order"
     t.boolean "done"
+    t.text "__git_options"
   end
 
   create_table "delayed_jobs", force: :cascade do |t|
@@ -42,6 +43,35 @@ ActiveRecord::Schema.define(version: 2020_12_02_025013) do
     t.datetime "created_at", precision: 6
     t.datetime "updated_at", precision: 6
     t.index ["priority", "run_at"], name: "delayed_jobs_priority"
+  end
+
+  create_table "store_sync_runs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.bigint "sync_runs_id"
+    t.bigint "stores_id"
+    t.index ["stores_id"], name: "index_store_sync_runs_on_stores_id"
+    t.index ["sync_runs_id"], name: "index_store_sync_runs_on_sync_runs_id"
+  end
+
+  create_table "stores", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name"
+    t.datetime "last_synced_at"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.string "type"
+    t.string "filename"
+  end
+
+  create_table "sync_conflicts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "object_id"
+    t.text "conflict_info"
+    t.bigint "sync_runs_id"
+    t.index ["sync_runs_id"], name: "index_sync_conflicts_on_sync_runs_id"
+  end
+
+  create_table "sync_runs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "status"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   create_table "todos", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

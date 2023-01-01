@@ -5,6 +5,7 @@ class AddCsvTodos < ActiveRecord::Migration[6.0]
       t.string  :title
       t.integer :order
       t.boolean :done
+      t.text :__git_options
     end
   end
 end
